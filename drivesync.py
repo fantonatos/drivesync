@@ -1,3 +1,4 @@
+from datetime import datetime
 from os.path import exists
 from sys import exit
 import time
@@ -7,6 +8,7 @@ import time
     24 Sep, 2019
     
     Last Modified: 25 Sep, 2019
+    
 '''
 
 # Data
@@ -38,7 +40,9 @@ def getDrives():
 
 def onDriveInsertion(driveLetter):
     sync = isSyncEnabled(driveLetter)
-    
+    #if sync:
+    #    file = open(driveLetter + ":\\drivesync.inf", "r")      
+        
     return sync
 
 # Execution
@@ -54,21 +58,27 @@ print('drivesync now monitoring drives')
 
 previousDrives = getDrives()
 while True:
-    currentdrives = getDrives()
+    currentDrives = getDrives(); timenow = datetime.now()
     
     if DEBUG:
-        print(str(currentdrives) + " testing against last iteration")
+        print("Testing current drives {} against previous drives {}".format(currentdrives, previousDrives))
     
     # Run on drive insertion
-    if currentdrives.__len__() > previousDrives.__len__():
-        print("Drive(s) Inserted.")
+    if currentDrives.__len__() > previousDrives.__len__():
+        # Find out which drive was inserted
+        driveLetters = list( set(currentDrives) - set(previousDrives) );
+        print("[{}] Drive(s) {} Inserted.".format(timenow.strftime("%d %b, %Y %H:%M:%S"), driveLetters))
+        
+        # for now we assume only one drive was inserted
+        print("Running Sync: {} {}".format(driveLetters[0], onDriveInsertion(driveLetters[0])))
         
     # Run on drive removal
-    if currentdrives.__len__() < previousDrives.__len__():
-        print("Drive(s) Removed.")
+    if currentDrives.__len__() < previousDrives.__len__():
+        driveLetters = list( set(previousDrives) - set(currentDrives) );
+        print("[{}] Drive(s) {} Removed.".format(timenow.strftime("%d %b, %Y %H:%M:%S"), driveLetters))
     
     time.sleep(1)
-    previousDrives = currentdrives
+    previousDrives = currentDrives
     
     
 
