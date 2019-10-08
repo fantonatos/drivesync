@@ -61,7 +61,7 @@ while True:
     currentDrives = getDrives(); timenow = datetime.now()
     
     if DEBUG:
-        print("Testing current drives {} against previous drives {}".format(currentdrives, previousDrives))
+        print("Testing current drives {} against previous drives {}".format(currentDrives, previousDrives))
     
     # Run on drive insertion
     if currentDrives.__len__() > previousDrives.__len__():
