@@ -11,6 +11,8 @@ import time
     
 '''
 
+
+
 # Data
 
 #           look for drives with the id "debug1" inside the drivesync.inf file
@@ -22,15 +24,27 @@ test_drive = "G"
 DEBUG = False
 
 
+
 # Functions
 
-# Returns true if drive is set up for sync
+#   reads instructions from the drivesync configuration file located in the given drive
+def parseInstructions(driveLetter):
+    with open(driveLetter + ':\\drivesync.inf', 'r') as file:
+        # parse the entire instruction file
+        instructions = []
+        for line in file:
+            instructions.append(line)
+            
+    return instructions
+        
+
+#   Returns true if drive is set up for sync
 def isSyncEnabled(driveLetter):
     if exists(driveLetter + ':\\drivesync.inf'):
         return True
     return False
 
-# Returns list of all drives on the system
+#   Returns list of all drives on the system
 def getDrives():
     drives = []
     for drive in range(ord('A'), ord('Z') + 1):
@@ -38,12 +52,15 @@ def getDrives():
             drives.append(chr(drive))
     return drives
 
-def onDriveInsertion(driveLetter):
+#   Runs when a drive is inserted, (runs the sync)
+def onDriveInsertion(driveLetter):                  
     sync = isSyncEnabled(driveLetter)
-    #if sync:
-    #    file = open(driveLetter + ":\\drivesync.inf", "r")      
+    if sync:
+        print(parseInstructions(driveLetter))
         
     return sync
+
+
 
 # Execution
 print("drivesync launched")
@@ -51,6 +68,7 @@ print("drivesync launched")
 
 # Start Routine
 print('drivesync running start routine')
+
 
 
 # Drive Monitor
@@ -65,21 +83,26 @@ while True:
     
     # Run on drive insertion
     if currentDrives.__len__() > previousDrives.__len__():
+    
         # Find out which drive was inserted
-        driveLetters = list( set(currentDrives) - set(previousDrives) );
+        driveLetters = list( set(currentDrives) - set(previousDrives) )
+        
         print("[{}] Drive(s) {} Inserted.".format(timenow.strftime("%d %b, %Y %H:%M:%S"), driveLetters))
         
-        # for now we assume only one drive was inserted
-        print("Running Sync: {} {}".format(driveLetters[0], onDriveInsertion(driveLetters[0])))
+        for driveLetter in driveLetters:
+            # handle the event (if drive configured, will run sync)
+            result = onDriveInsertion(driveLetter)
+            
+            
+            print("\tFor drive {}:\nSync Instructions Found: {}".format(driveLetter, result))
         
     # Run on drive removal
     if currentDrives.__len__() < previousDrives.__len__():
         driveLetters = list( set(previousDrives) - set(currentDrives) );
         print("[{}] Drive(s) {} Removed.".format(timenow.strftime("%d %b, %Y %H:%M:%S"), driveLetters))
     
-    time.sleep(1)
+    time.sleep(1) # my default = 1 sec
     previousDrives = currentDrives
-    
     
 
 # Close Program
