@@ -1,32 +1,25 @@
+'''
+    Copyright (c) Fotis Antonatos. 2019
+    
+    drivesync is a tool that keeps files on your computer in sync with those on your removable drives.
+    
+'''
+
 from datetime import datetime
 from os.path import exists
 from sys import exit
+import subprocess
 import time
-
-'''
-    Fotis Antonatos
-    24 Sep, 2019
-    
-    Last Modified: 25 Sep, 2019
-    
-'''
-
+import os
 
 
 # Data
-
-#           look for drives with the id "debug1" inside the drivesync.inf file
-#           "documents" is a built-in link to the user's documents library
-test_commands = [   "sync debug1 with directory documents" 
-                    "sync debug2 with subdirectory .../Pictures/SummerVacation1999"]
-test_drive = "G"
-
-DEBUG = False
 
 
 
 # Functions
 
+'''
 #   reads instructions from the drivesync configuration file located in the given drive
 def parseInstructions(driveLetter):
     with open(driveLetter + ':\\drivesync.inf', 'r') as file:
@@ -36,22 +29,21 @@ def parseInstructions(driveLetter):
             instructions.append(line)
             
     return instructions
-        
+''' 
 
-#   Returns true if drive is set up for sync
 def isSyncEnabled(driveLetter):
-    if exists(driveLetter + ':\\drivesync.inf'):
+    if exists(driveLetter + ':\\syncexec.bat'):
         return True
     return False
 
-#   Returns list of all drives on the system
 def getDrives():
     drives = []
     for drive in range(ord('A'), ord('Z') + 1):
         if exists(chr(drive) + ':'):
             drives.append(chr(drive))
     return drives
-
+    
+'''
 #   Runs when a drive is inserted, (runs the sync)
 def onDriveInsertion(driveLetter):                  
     sync = isSyncEnabled(driveLetter)
@@ -59,7 +51,7 @@ def onDriveInsertion(driveLetter):
         print(parseInstructions(driveLetter))
         
     return sync
-
+'''
 
 
 # Execution
@@ -78,24 +70,31 @@ previousDrives = getDrives()
 while True:
     currentDrives = getDrives(); timenow = datetime.now()
     
-    if DEBUG:
-        print("Testing current drives {} against previous drives {}".format(currentDrives, previousDrives))
-    
-    # Run on drive insertion
+    # Trigger if change in system drives
     if currentDrives.__len__() > previousDrives.__len__():
-    
-        # Find out which drive was inserted
+        # find out which drive was inserted
         driveLetters = list( set(currentDrives) - set(previousDrives) )
         
         print("[{}] Drive(s) {} Inserted.".format(timenow.strftime("%d %b, %Y %H:%M:%S"), driveLetters))
         
         for driveLetter in driveLetters:
-            # handle the event (if drive configured, will run sync)
-            result = onDriveInsertion(driveLetter)
+            # handle the event for each drive
+            
+            if isSyncEnabled(driveLetter) == False:
+                break;
+            
+            theScript = r"{}:\\syncexec.bat".format(driveLetter)
+
+            # ensure the instruction will run on the target drive, by changing this script's working directory
+            absolute_path = os.path.abspath(theScript)
+            directory = os.path.dirname(absolute_path)
+            os.chdir(directory)
+            
+            subprocess.call(theScript)
             
             
-            print("\tFor drive {}:\nSync Instructions Found: {}".format(driveLetter, result))
-        
+            # done handling drive
+    
     # Run on drive removal
     if currentDrives.__len__() < previousDrives.__len__():
         driveLetters = list( set(previousDrives) - set(currentDrives) );
@@ -103,7 +102,7 @@ while True:
     
     time.sleep(1) # my default = 1 sec
     previousDrives = currentDrives
-    
+
 
 # Close Program
 print('drivesync closing')
